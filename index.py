@@ -1,10 +1,17 @@
 import shelve
+from enum import Enum
+
+class Tag(Enum):
+    H1 = "H1"
+    H2 = "H2"
+    H3 = "H3"
+    BOLD = "BOLD"
 
 class Posting:
     def __init__(self, document_id, freq):
         self.document_id = document_id
         self.freq = freq
-        #TODO: H1, H2, H3, Bold counts
+        self.importance_counts = {tag: 0 for tag in Tag}
 
 class Index:
     def __init__(self):
