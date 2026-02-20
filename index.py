@@ -38,6 +38,10 @@ class Index:
     def search(self, token: str):
         return self.index.get(token, [])
 
+    def increment_doc_count(self):
+        self.index['stats:unique_docs'] = int(self.index['stats:unique_docs']) + 1
+        self.index.sync()
+
     def print_stats(self):
         print(f"Total unique tokens: {len(self.index)}")
         print(f"Total documents: {self.index['stats:unique_docs']}")
