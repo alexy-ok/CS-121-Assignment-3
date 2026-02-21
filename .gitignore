@@ -3,3 +3,4 @@ DEV/
 index.db
 index.db-shm
 index.db-wal
+__pycache__/
