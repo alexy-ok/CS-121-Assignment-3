@@ -15,6 +15,15 @@ if __name__ == "__main__":
 
     dev_dir_names = [d for d in os.listdir("DEV") if os.path.isdir(os.path.join("DEV", d))]
     log.info(f"Found {len(dev_dir_names)} directories to process")
+
+    total_docs = sum(
+        len(f for f in os.listdir(os.path.join("DEV", d)) if os.path.isfile(os.path.join("DEV", d, f)))
+        for d in dev_dir_names
+    )
+    log.info(f"Total documents to process: {total_docs}")
+
+    flush_every = max(1, total_docs // 10)
+    doc_count = 0
     i = 0
 
     for dir in dev_dir_names:
@@ -26,18 +35,20 @@ if __name__ == "__main__":
         for file in files:
             try:
                 parser = DocumentParser(os.path.join("DEV", dir, file))
-                # doc_id, normal_tokens, important_tokens, results = parser.parse()
                 doc_hash, results = parser.parse()
                 for token, data in results.items():
                     index.add(token, doc_hash, data['frequency'], data['importance'])
-                # for token, in normal_tokens:
-                #     index.add(token, doc_id)
 
                 index.increment_doc_count()
+                doc_count += 1
+                if doc_count % flush_every == 0:
+                    index.flush_partial()
 
             except Exception as e:
                 log.error(f"Error parsing file {file}: {e}")
 
+    index.flush_partial()
+    index.merge_partials()
     index.print_stats()
     index.close()
         
