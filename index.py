@@ -66,7 +66,8 @@ class Index:
         if self.index is None:
             return
         doc_count = self.index["stats:unique_docs"]
-        token_count = len([k for k in self.index if k != "stats:unique_docs"])
+        # token_count = len([k for k in self.index if k != "stats:unique_docs"])
+        token_count = len(self.index) - 1
         print(f"Total unique tokens: {token_count}")
         print(f"Total documents: {doc_count}")
 
