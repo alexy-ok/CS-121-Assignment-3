@@ -17,7 +17,7 @@ if __name__ == "__main__":
     log.info(f"Found {len(dev_dir_names)} directories to process")
 
     total_docs = sum(
-        len(f for f in os.listdir(os.path.join("DEV", d)) if os.path.isfile(os.path.join("DEV", d, f)))
+        sum(1 for f in os.listdir(os.path.join("DEV", d)) if os.path.isfile(os.path.join("DEV", d, f)))
         for d in dev_dir_names
     )
     log.info(f"Total documents to process: {total_docs}")
