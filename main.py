@@ -26,9 +26,12 @@ if __name__ == "__main__":
         for file in files:
             try:
                 parser = DocumentParser(os.path.join("DEV", dir, file))
-                doc_id, normal_tokens, important_tokens = parser.parse()
-                for token in normal_tokens:
-                    index.add(token, doc_id)
+                # doc_id, normal_tokens, important_tokens, results = parser.parse()
+                doc_hash, results = parser.parse()
+                for token, data in results.items():
+                    index.add(token, doc_hash, data['frequency'], data['importance'])
+                # for token, in normal_tokens:
+                #     index.add(token, doc_id)
 
                 index.increment_doc_count()
 

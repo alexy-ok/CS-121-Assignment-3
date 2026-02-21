@@ -1,5 +1,7 @@
 import json
 import re
+import hashlib
+from collections import Counter
 from bs4 import BeautifulSoup
 from stemmer import porter_stemmer
 from index import Tag
@@ -64,7 +66,25 @@ class DocumentParser:
         for tag in soup.find_all(["b", "strong"]):
             important_tokens[Tag.BOLD] += self._tokenize_and_stem(tag.get_text())
 
-        # Remove URL fragments (#section)
-        doc_id = url.split("#")[0]
+        # hash document url
+        encoded_doc_id = url.split("#")[0].encode('utf-8')
+        hash_obj = hashlib.sha256(encoded_doc_id)
+        doc_hash = hash_obj.hexdigest()
+        
+        normal_counts = Counter(normal_tokens)
+        importance_counts = {tag: Counter(important_tokens[tag]) for tag in Tag}
+        all_tokens = set(normal_counts) | set(t for tokens in important_tokens.values() for t in tokens)
 
-        return doc_id, normal_tokens, important_tokens
+        results = {}
+        for token in all_tokens:
+            results[token] = {
+                "frequency": normal_counts.get(token, 0),
+                "importance": {
+                    tag.name.lower(): importance_counts[tag].get(token, 0)
+                    for tag in Tag
+                },
+            }
+        
+        return doc_hash, results
+
+        # return doc_id, normal_tokens, important_tokens, results
