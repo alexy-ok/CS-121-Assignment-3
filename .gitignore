@@ -4,3 +4,9 @@ index.db
 index.db-shm
 index.db-wal
 __pycache__/
+*.shelve
+*.txt
+*.zip
+*.pdf
+.shelve-shm
+.shelve-wal

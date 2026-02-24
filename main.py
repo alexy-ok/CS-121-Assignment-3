@@ -35,15 +35,15 @@ if __name__ == "__main__":
         for file in files:
             try:
                 parser = DocumentParser(os.path.join("DEV", dir, file))
-                doc_hash, results = parser.parse()
+                results = parser.parse()
                 for token, data in results.items():
-                    index.add(token, doc_hash, data['frequency'], data['importance'])
+                    index.add(token, doc_count, data['frequency'], data['importance'])
 
                 index.increment_doc_count()
                 doc_count += 1
                 if doc_count % flush_every == 0:
                     index.flush_partial()
-
+            
             except Exception as e:
                 log.error(f"Error parsing file {file}: {e}")
 
@@ -51,4 +51,4 @@ if __name__ == "__main__":
     index.merge_partials()
     index.print_stats()
     index.close()
-        
+    log.info("Indexing complete")

@@ -12,6 +12,9 @@ class Posting:
         self.document_id = document_id
         self.freq = freq
         self.importance_counts = importance
+    
+    def __str__(self):
+        return f"{self.document_id} {self.freq} {self.importance_counts[Tag.H1.name]} {self.importance_counts[Tag.H2.name]} {self.importance_counts[Tag.H3.name]} {self.importance_counts[Tag.BOLD.name]}"
 
 class Index:
     def __init__(self):
@@ -35,7 +38,9 @@ class Index:
         partial = shelve.open(path, flag="c")
         try:
             for token, postings in self._memory_index.items():
-                partial[token] = postings
+                sorted_postings = sorted(postings, key=lambda x: int(x.document_id))
+                partial[token] = [str(posting) for posting in sorted_postings]
+
             partial.sync()
         finally:
             partial.close()
@@ -51,7 +56,8 @@ class Index:
                 for token in partial:
                     postings = partial[token]
                     existing = self.index.get(token, [])
-                    self.index[token] = existing + postings
+                    sorted_postings = sorted(postings + existing, key=lambda x: int(x.split(" ")[0]))
+                    self.index[token] = sorted_postings
             finally:
                 partial.close()
         self.index["stats:unique_docs"] = self._total_doc_count
@@ -66,7 +72,6 @@ class Index:
         if self.index is None:
             return
         doc_count = self.index["stats:unique_docs"]
-        # token_count = len([k for k in self.index if k != "stats:unique_docs"])
         token_count = len(self.index) - 1
         print(f"Total unique tokens: {token_count}")
         print(f"Total documents: {doc_count}")
