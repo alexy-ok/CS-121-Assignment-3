@@ -17,11 +17,13 @@ class Posting:
         return f"{self.document_id} {self.freq} {self.importance_counts[Tag.H1.name]} {self.importance_counts[Tag.H2.name]} {self.importance_counts[Tag.H3.name]} {self.importance_counts[Tag.BOLD.name]}"
 
 class Index:
-    def __init__(self):
+    def __init__(self, load_from_file=None):
         self._memory_index = {}
         self._partial_paths = []
         self._total_doc_count = 0
         self.index = None
+        if load_from_file:
+            self.load(load_from_file)
 
     def add(self, token: str, document_id: str, frequency: int, importance: dict[Tag, int], tag=None):
         self._memory_index.setdefault(token, []).append(
@@ -75,6 +77,13 @@ class Index:
         token_count = len(self.index) - 1
         print(f"Total unique tokens: {token_count}")
         print(f"Total documents: {doc_count}")
+
+    def load(self, path="index.shelve"):
+        """Load an existing index from a shelve file."""
+        if self.index is not None:
+            self.index.close()
+        self.index = shelve.open(path, flag="r")
+        self._total_doc_count = self.index.get("stats:unique_docs", 0)
 
     def close(self):
         if self.index is not None:
