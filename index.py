@@ -15,40 +15,63 @@ class Posting:
 
 class Index:
     def __init__(self):
-        self.index = shelve.open('index.shelve')
-        self.index['stats:unique_docs'] = 0
+        self._memory_index = {}
+        self._partial_paths = []
+        self._total_doc_count = 0
+        self.index = None
 
-    def add(self, token: str, document_id: str, frequency: int, importance: dict[Tag, int], tag = None):
-        if token not in self.index:
-            self.index[token] = []
-
-        self.index[token].append(
+    def add(self, token: str, document_id: str, frequency: int, importance: dict[Tag, int], tag=None):
+        self._memory_index.setdefault(token, []).append(
             Posting(document_id, frequency, importance)
         )
-        # doc_list = self.index[token]
 
-        # if document_id not in doc_list:
-        #     doc_list[document_id] = Posting(document_id, 1)
-        # else:
-        #     doc_list[document_id].freq += 1
+    def increment_doc_count(self):
+        self._total_doc_count += 1
 
-        # if tag is not None:
-        #     doc_list[document_id].importance_counts[tag] += 1
-    
-        # self.index[token] = doc_list
+    def flush_partial(self):
+        if not self._memory_index:
+            return
+        path = f"index_part_{len(self._partial_paths)}.shelve"
+        partial = shelve.open(path, flag="c")
+        try:
+            for token, postings in self._memory_index.items():
+                partial[token] = postings
+            partial.sync()
+        finally:
+            partial.close()
+        self._partial_paths.append(path)
+        self._memory_index = {}
+
+    def merge_partials(self):
+        self.index = shelve.open("index.shelve", flag="c")
+        self.index["stats:unique_docs"] = 0
+        for path in self._partial_paths:
+            partial = shelve.open(path, flag="r")
+            try:
+                for token in partial:
+                    postings = partial[token]
+                    existing = self.index.get(token, [])
+                    self.index[token] = existing + postings
+            finally:
+                partial.close()
+        self.index["stats:unique_docs"] = self._total_doc_count
         self.index.sync()
 
     def search(self, token: str):
+        if self.index is None:
+            return []
         return self.index.get(token, [])
 
-    def increment_doc_count(self):
-        self.index['stats:unique_docs'] = int(self.index['stats:unique_docs']) + 1
-        self.index.sync()
-
     def print_stats(self):
-        print(f"Total unique tokens: {len(self.index)}")
-        print(f"Total documents: {self.index['stats:unique_docs']}")
-
+        if self.index is None:
+            return
+        doc_count = self.index["stats:unique_docs"]
+        # token_count = len([k for k in self.index if k != "stats:unique_docs"])
+        token_count = len(self.index) - 1
+        print(f"Total unique tokens: {token_count}")
+        print(f"Total documents: {doc_count}")
 
     def close(self):
-        self.index.close()
+        if self.index is not None:
+            self.index.close()
+            self.index = None
