@@ -89,3 +89,45 @@ class Index:
         if self.index is not None:
             self.index.close()
             self.index = None
+    
+    def boolean_and(self, tokens: list[str]):
+        if not tokens:
+            return []
+
+        postings_lists = []
+        for token in tokens:
+            postings = self.search(token)
+            if not postings:
+                return []  # AND means empty if one term missing
+            
+            # extract docIDs
+            doc_ids = [int(p.split(" ")[0]) for p in postings]
+            postings_lists.append(doc_ids)
+
+        # sort by shortest list (optimization)
+        postings_lists.sort(key=len)
+
+        result = postings_lists[0]
+
+        for other in postings_lists[1:]:
+            result = self._merge_postings(result, other)
+            if not result:
+                return []
+
+        return result
+
+    def _merge_postings(self, p1: list[int], p2: list[int]):
+        i = j = 0
+        result = []
+
+        while i < len(p1) and j < len(p2):
+            if p1[i] == p2[j]:
+                result.append(p1[i])
+                i += 1
+                j += 1
+            elif p1[i] < p2[j]:
+                i += 1
+            else:
+                j += 1
+
+        return result
