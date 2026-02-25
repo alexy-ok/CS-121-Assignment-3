@@ -21,6 +21,7 @@ class Index:
         self._memory_index = {}
         self._partial_paths = []
         self._total_doc_count = 0
+        self.doc_id_to_url = {}
         self.index = None
         if load_from_file:
             self.load(load_from_file)

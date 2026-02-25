@@ -65,5 +65,5 @@ class DocumentParser:
                 },
             }
         
-        return results
+        return url, results
         

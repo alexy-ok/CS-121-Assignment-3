@@ -35,7 +35,8 @@ if __name__ == "__main__":
         for file in files:
             try:
                 parser = DocumentParser(os.path.join("DEV", dir, file))
-                results = parser.parse()
+                url, results = parser.parse()
+                index.doc_id_to_url[doc_count] = url
                 for token, data in results.items():
                     index.add(token, doc_count, data['frequency'], data['importance'])
 
