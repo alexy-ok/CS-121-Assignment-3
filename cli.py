@@ -1,4 +1,5 @@
 from index import Index
+import time
 
 if __name__ == "__main__":
     index = Index(load_from_file="index.shelve")
@@ -9,9 +10,13 @@ if __name__ == "__main__":
             break
         elif command == "q":
             query = input("Enter query: ")
-            
+
+            start_time = time.perf_counter()
             results = index.search(query)
-            print(f"Found {len(results)} results")
+            end_time = time.perf_counter()
+
+            elapsed_ms = (end_time - start_time) * 1000
+            print(f"Found {len(results)} results (processed in {elapsed_ms:.2f} ms)")
             results = results.split("\n")
             for result in results[:5]:
                 print(f'Doc ID: {result.split(" ")[0]} Frequency: {result.split(" ")[1]} Importance: {result.split(" ")[2]} {result.split(" ")[3]} {result.split(" ")[4]} {result.split(" ")[5]}')
