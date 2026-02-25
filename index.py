@@ -8,11 +8,11 @@ class Tag(Enum):
     BOLD = "BOLD"
 
 class Posting:
-    def __init__(self, document_id, freq, importance: dict[Tag, int]):
+    def __init__(self, document_id, freq, importance: dict[Tag, int], length: int):
         self.document_id = document_id
         self.freq = freq
         self.importance_counts = importance
-    
+        self.tf = freq / length
     def __str__(self):
         return f"{self.document_id} {self.freq} {self.importance_counts[Tag.H1.name]} {self.importance_counts[Tag.H2.name]} {self.importance_counts[Tag.H3.name]} {self.importance_counts[Tag.BOLD.name]}"
 

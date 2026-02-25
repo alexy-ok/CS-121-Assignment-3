@@ -63,6 +63,7 @@ class DocumentParser:
                     tag.name: importance_counts[tag].get(token, 0)
                     for tag in Tag
                 },
+                "length": len(normal_tokens)
             }
         
         return url, results

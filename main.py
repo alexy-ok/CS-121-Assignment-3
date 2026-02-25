@@ -38,7 +38,7 @@ if __name__ == "__main__":
                 url, results = parser.parse()
                 index.doc_id_to_url[doc_count] = url
                 for token, data in results.items():
-                    index.add(token, doc_count, data['frequency'], data['importance'])
+                    index.add(token, doc_count, data['frequency'], data['importance'], data['length'])
 
                 index.increment_doc_count()
                 doc_count += 1
