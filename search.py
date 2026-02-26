@@ -1,6 +1,12 @@
 from index import Index
 import nltk
 
+
+try:
+    nltk.data.find('tokenizers/punkt_tab')
+except LookupError:
+    nltk.download('punkt_tab', quiet=True)
+
 # Initialize the stemmer
 stemmer = nltk.stem.PorterStemmer()
 
@@ -18,7 +24,7 @@ if __name__ == "__main__":
         query = input("Enter query: ").strip()
         if query.lower() in ("exit", "quit"):
             break
-
+        query = query.lower()
         tokens = tokenize_and_stem(query)
         doc_ids = index.boolean_and(tokens)
 

@@ -112,7 +112,11 @@ class Index:
 
         postings_lists = []
         for token in tokens:
+            print(token)
             postings = self.search(token)
+            postings = postings.split("\n")
+            for i in range(len(postings)):
+                postings[i] = postings[i].split(" ")
             if not postings:
                 return []  # AND means empty if one term missing
             
@@ -122,14 +126,12 @@ class Index:
 
         # sort by shortest list (optimization)
         postings_lists.sort(key=len)
-
         result = postings_lists[0]
 
         for other in postings_lists[1:]:
             result = self._merge_postings(result, other)
             if not result:
                 return []
-
         return result
 
     def _merge_postings(self, p1: list[int], p2: list[int]):
