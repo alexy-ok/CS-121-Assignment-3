@@ -21,6 +21,8 @@ class DocumentParser:
             data = json.load(f)
 
         url = data["url"]
+        url = url.split("#")[0].strip() # remove fragments 
+        
         html_content = data["content"]
 
         soup = BeautifulSoup(html_content, "html5lib")
