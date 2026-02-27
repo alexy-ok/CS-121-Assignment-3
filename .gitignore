@@ -11,3 +11,4 @@ index_part_*.shelve
 *.pdf
 .shelve-shm
 .shelve-wal
+*.pyc

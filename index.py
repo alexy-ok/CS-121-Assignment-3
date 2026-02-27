@@ -1,3 +1,4 @@
+import math
 import shelve
 from enum import Enum
 
@@ -12,7 +13,7 @@ class Posting:
         self.document_id = document_id
         self.freq = freq
         self.importance_counts = importance
-        self.tf = freq / length
+        self.length = length
     def __str__(self):
         return f"{self.document_id} {self.freq} {self.importance_counts[Tag.H1.name]} {self.importance_counts[Tag.H2.name]} {self.importance_counts[Tag.H3.name]} {self.importance_counts[Tag.BOLD.name]}"
     
@@ -53,7 +54,7 @@ class Index:
             for token, postings in self._memory_index.items():
                 sorted_postings = sorted(postings, key=lambda x: int(x.document_id))
                 partial[token] = [
-                    (posting.document_id, posting.weighted_score())
+                    (posting.document_id, posting.weighted_score(), posting.length)
                     for posting in sorted_postings
                 ]
 
@@ -113,18 +114,14 @@ class Index:
         postings_lists = []
         for token in tokens:
             postings = self.search(token)
-            
             if not postings:
-                return []  # AND means empty if one term missing
-            
-            # extract docIDs
+                return []
+
             doc_ids = [p[0] for p in postings]
             postings_lists.append(doc_ids)
-
-        # sort by shortest list (optimization)
         postings_lists.sort(key=len)
         result = postings_lists[0]
-
+     
         for other in postings_lists[1:]:
             result = self._merge_postings(result, other)
             if not result:
@@ -146,3 +143,25 @@ class Index:
                 j += 1
 
         return result
+
+    def sort_tfidf(self, doc_ids: list[int], tokens: list[str]):
+        doc_scores = {}
+        doc_ids_set = set(doc_ids)
+        for token in tokens:
+            postings = self.search(token)
+            df = len(postings)
+            if df == 0:
+                continue
+            idf = math.log(self._total_doc_count / df)
+            
+            for doc_id, weighted_score, doc_length in postings:
+                if doc_id in doc_ids_set:
+                    if doc_length > 0:
+                        tf = weighted_score / doc_length
+                        tfidf = tf * idf
+                        doc_scores[doc_id] = doc_scores.get(doc_id, 0) + tfidf
+        
+        result_with_scores = [(doc_id, doc_scores.get(doc_id, 0)) for doc_id in doc_ids]
+        result_with_scores.sort(key=lambda x: x[1], reverse=True)
+        
+        return result_with_scores
