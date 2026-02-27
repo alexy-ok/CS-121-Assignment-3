@@ -112,11 +112,8 @@ class Index:
 
         postings_lists = []
         for token in tokens:
-            print(token)
             postings = self.search(token)
-            postings = postings.split("\n")
-            for i in range(len(postings)):
-                postings[i] = postings[i].split(" ")
+            
             if not postings:
                 return []  # AND means empty if one term missing
             
