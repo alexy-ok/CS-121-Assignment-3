@@ -1,5 +1,6 @@
 from index import Index
 import nltk
+import time
 
 
 try:
@@ -22,11 +23,15 @@ if __name__ == "__main__":
 
     while True:
         query = input("Enter query: ").strip()
+        start_time = time.perf_counter()
         if query.lower() in ("exit", "quit"):
             break
         query = query.lower()
         tokens = tokenize_and_stem(query)
         doc_ids = index.boolean_and(tokens)
+        end_time = time.perf_counter()
+        elapsed_ms = (end_time - start_time) * 1000
+        print(f"Found {len(doc_ids)} results (processed in {elapsed_ms:.2f} ms)")
 
         if not doc_ids:
             print("No results found.\n")
