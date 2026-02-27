@@ -66,5 +66,5 @@ class DocumentParser:
                 "length": len(normal_tokens)
             }
         
-        return results
+        return url, results
         

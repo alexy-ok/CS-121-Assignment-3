@@ -15,19 +15,30 @@ class Posting:
         self.tf = freq / length
     def __str__(self):
         return f"{self.document_id} {self.freq} {self.importance_counts[Tag.H1.name]} {self.importance_counts[Tag.H2.name]} {self.importance_counts[Tag.H3.name]} {self.importance_counts[Tag.BOLD.name]}"
-
-class Index:
+    
+    def weighted_score(self):
+        # TWEAK TAG WEIGHTS!
+        return (
+            self.freq * 1 +
+            self.importance_counts.get(Tag.H1.name, 0) * 5 +
+            self.importance_counts.get(Tag.H2.name, 0) * 4 +
+            self.importance_counts.get(Tag.H3.name, 0) * 3 +
+            self.importance_counts.get(Tag.BOLD.name, 0) * 2
+        )
+    
+class Index: 
     def __init__(self, load_from_file=None):
         self._memory_index = {}
         self._partial_paths = []
         self._total_doc_count = 0
+        self.doc_id_to_url = {}
         self.index = None
         if load_from_file:
             self.load(load_from_file)
 
-    def add(self, token: str, document_id: str, frequency: int, importance: dict[Tag, int], tag=None):
+    def add(self, token: str, document_id: int, frequency: int, importance: dict[Tag, int], length:int):
         self._memory_index.setdefault(token, []).append(
-            Posting(document_id, frequency, importance)
+            Posting(document_id, frequency, importance, length)
         )
 
     def increment_doc_count(self):
@@ -41,7 +52,10 @@ class Index:
         try:
             for token, postings in self._memory_index.items():
                 sorted_postings = sorted(postings, key=lambda x: int(x.document_id))
-                partial[token] = [str(posting) for posting in sorted_postings]
+                partial[token] = [
+                    (posting.document_id, posting.weighted_score())
+                    for posting in sorted_postings
+                ]
 
             partial.sync()
         finally:
@@ -58,11 +72,12 @@ class Index:
                 for token in partial:
                     postings = partial[token]
                     existing = self.index.get(token, [])
-                    sorted_postings = sorted(postings + existing, key=lambda x: int(x.split(" ")[0]))
+                    sorted_postings = sorted(postings + existing, key=lambda x: x[0])
                     self.index[token] = sorted_postings
             finally:
                 partial.close()
         self.index["stats:unique_docs"] = self._total_doc_count
+        self.index["stats:doc_id_to_url"] = {str(k): v for k, v in self.doc_id_to_url.items()}
         self.index.sync()
 
     def search(self, token: str):
@@ -84,8 +99,50 @@ class Index:
             self.index.close()
         self.index = shelve.open(path, flag="r")
         self._total_doc_count = self.index.get("stats:unique_docs", 0)
+        self.doc_id_to_url = self.index.get("stats:doc_id_to_url", {})
 
     def close(self):
         if self.index is not None:
             self.index.close()
             self.index = None
+    
+    def boolean_and(self, tokens: list[str]):
+        if not tokens:
+            return []
+
+        postings_lists = []
+        for token in tokens:
+            postings = self.search(token)
+            
+            if not postings:
+                return []  # AND means empty if one term missing
+            
+            # extract docIDs
+            doc_ids = [p[0] for p in postings]
+            postings_lists.append(doc_ids)
+
+        # sort by shortest list (optimization)
+        postings_lists.sort(key=len)
+        result = postings_lists[0]
+
+        for other in postings_lists[1:]:
+            result = self._merge_postings(result, other)
+            if not result:
+                return []
+        return result
+
+    def _merge_postings(self, p1: list[int], p2: list[int]):
+        i = j = 0
+        result = []
+
+        while i < len(p1) and j < len(p2):
+            if p1[i] == p2[j]:
+                result.append(p1[i])
+                i += 1
+                j += 1
+            elif p1[i] < p2[j]:
+                i += 1
+            else:
+                j += 1
+
+        return result

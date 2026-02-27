@@ -3,6 +3,7 @@ DEV/
 index.db
 index.db-shm
 index.db-wal
+*.pyc
 __pycache__/
 index_part_*.shelve
 *.txt
