@@ -13,11 +13,17 @@ if __name__ == "__main__":
 
     index = Index()
 
-    dev_dir_names = [d for d in os.listdir("DEV") if os.path.isdir(os.path.join("DEV", d))]
+    dev_dir_names = [
+        d for d in os.listdir("DEV") if os.path.isdir(os.path.join("DEV", d))
+    ]
     log.info(f"Found {len(dev_dir_names)} directories to process")
 
     total_docs = sum(
-        sum(1 for f in os.listdir(os.path.join("DEV", d)) if os.path.isfile(os.path.join("DEV", d, f)))
+        sum(
+            1
+            for f in os.listdir(os.path.join("DEV", d))
+            if os.path.isfile(os.path.join("DEV", d, f))
+        )
         for d in dev_dir_names
     )
     log.info(f"Total documents to process: {total_docs}")
@@ -35,21 +41,21 @@ if __name__ == "__main__":
         for file in files:
             try:
                 parser = DocumentParser(os.path.join("DEV", dir, file))
-                url, results = parser.parse()
+                url, results, doc_length = parser.parse()
                 index.doc_id_to_url[doc_count] = url
+                index.log_document_length(doc_count, doc_length)
                 for token, data in results.items():
-                    index.add(token, doc_count, data['frequency'], data['importance'], data['length'])
+                    index.add(token, doc_count, data["frequency"], data["importance"])
 
                 index.increment_doc_count()
                 doc_count += 1
                 if doc_count % flush_every == 0:
                     index.flush_partial()
-            
+
             except Exception as e:
                 log.error(f"Error parsing file {file}: {e}")
 
     index.flush_partial()
-    index.merge_partials()
-    index.print_stats()
+    index.merge_partials_bin()
     index.close()
     log.info("Indexing complete")
