@@ -53,6 +53,11 @@ class Index:
             with open("doc_lengths.json", "r", encoding="utf-8") as f:
                 self.doc_lengths = json.load(f)
             self._total_doc_count = len(self.doc_lengths)
+        if os.path.exists("stats.json"):
+            with open("stats.json", "r", encoding="utf-8") as f:
+                stats = json.load(f)
+                self._total_doc_count = stats["unique_docs"]
+                self.doc_id_to_url = stats["doc_id_to_url"]
 
     def add(
         self,
