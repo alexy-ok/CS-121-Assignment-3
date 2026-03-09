@@ -36,19 +36,7 @@ class Posting:
 class Index:
     def __init__(self):
         self._memory_index = {}
-        self._partial_paths = [
-            "index_part_0.txt",
-            "index_part_1.txt",
-            "index_part_2.txt",
-            "index_part_3.txt",
-            "index_part_4.txt",
-            "index_part_5.txt",
-            "index_part_6.txt",
-            "index_part_7.txt",
-            "index_part_8.txt",
-            "index_part_9.txt",
-            "index_part_10.txt",
-        ]
+        self._partial_paths = []
         self._total_doc_count = 0
         self.doc_id_to_url = {}
         self.doc_lengths = {}
@@ -103,8 +91,8 @@ class Index:
         self._memory_index = {}
 
     def merge_partials_bin(self):
-        # with open("doc_lengths.json", "w", encoding="utf-8") as f:
-        #     json.dump(self.doc_lengths, f, indent=2)
+        with open("doc_lengths.json", "w", encoding="utf-8") as f:
+            json.dump(self.doc_lengths, f, indent=2)
 
         with open("index.bin", "wb") as index:
             files = [open(path, "r", encoding="utf-8") for path in self._partial_paths]
