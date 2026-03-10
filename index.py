@@ -2,11 +2,13 @@ import math
 import shelve
 from enum import Enum
 
+
 class Tag(Enum):
     H1 = "H1"
     H2 = "H2"
     H3 = "H3"
     BOLD = "BOLD"
+
 
 class Posting:
     def __init__(self, document_id, freq, importance: dict[Tag, int], length: int):
@@ -14,20 +16,22 @@ class Posting:
         self.freq = freq
         self.importance_counts = importance
         self.length = length
+
     def __str__(self):
         return f"{self.document_id} {self.freq} {self.importance_counts[Tag.H1.name]} {self.importance_counts[Tag.H2.name]} {self.importance_counts[Tag.H3.name]} {self.importance_counts[Tag.BOLD.name]}"
-    
+
     def weighted_score(self):
         # TWEAK TAG WEIGHTS!
         return (
-            self.freq * 1 +
-            self.importance_counts.get(Tag.H1.name, 0) * 5 +
-            self.importance_counts.get(Tag.H2.name, 0) * 4 +
-            self.importance_counts.get(Tag.H3.name, 0) * 3 +
-            self.importance_counts.get(Tag.BOLD.name, 0) * 2
+            self.freq * 1
+            + self.importance_counts.get(Tag.H1.name, 0) * 5
+            + self.importance_counts.get(Tag.H2.name, 0) * 4
+            + self.importance_counts.get(Tag.H3.name, 0) * 3
+            + self.importance_counts.get(Tag.BOLD.name, 0) * 2
         )
-    
-class Index: 
+
+
+class Index:
     def __init__(self, load_from_file=None):
         self._memory_index = {}
         self._partial_paths = []
@@ -37,7 +41,14 @@ class Index:
         if load_from_file:
             self.load(load_from_file)
 
-    def add(self, token: str, document_id: int, frequency: int, importance: dict[Tag, int], length:int):
+    def add(
+        self,
+        token: str,
+        document_id: int,
+        frequency: int,
+        importance: dict[Tag, int],
+        length: int,
+    ):
         self._memory_index.setdefault(token, []).append(
             Posting(document_id, frequency, importance, length)
         )
@@ -78,7 +89,9 @@ class Index:
             finally:
                 partial.close()
         self.index["stats:unique_docs"] = self._total_doc_count
-        self.index["stats:doc_id_to_url"] = {str(k): v for k, v in self.doc_id_to_url.items()}
+        self.index["stats:doc_id_to_url"] = {
+            str(k): v for k, v in self.doc_id_to_url.items()
+        }
         self.index.sync()
 
     def search(self, token: str):
@@ -106,7 +119,7 @@ class Index:
         if self.index is not None:
             self.index.close()
             self.index = None
-    
+
     def boolean_and(self, tokens: list[str]):
         if not tokens:
             return []
@@ -121,7 +134,7 @@ class Index:
             postings_lists.append(doc_ids)
         postings_lists.sort(key=len)
         result = postings_lists[0]
-     
+
         for other in postings_lists[1:]:
             result = self._merge_postings(result, other)
             if not result:
@@ -147,21 +160,22 @@ class Index:
     def sort_tfidf(self, doc_ids: list[int], tokens: list[str]):
         doc_scores = {}
         doc_ids_set = set(doc_ids)
+        doc_length = len(self.doc_id_to_url)
         for token in tokens:
             postings = self.search(token)
             df = len(postings)
             if df == 0:
                 continue
             idf = math.log(self._total_doc_count / df)
-            
-            for doc_id, weighted_score, doc_length in postings:
+
+            for doc_id, weighted_score in postings:
                 if doc_id in doc_ids_set:
                     if doc_length > 0:
                         tf = weighted_score / doc_length
                         tfidf = tf * idf
                         doc_scores[doc_id] = doc_scores.get(doc_id, 0) + tfidf
-        
+
         result_with_scores = [(doc_id, doc_scores.get(doc_id, 0)) for doc_id in doc_ids]
         result_with_scores.sort(key=lambda x: x[1], reverse=True)
-        
+
         return result_with_scores
