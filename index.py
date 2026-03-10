@@ -44,15 +44,14 @@ class Index:
         self.lexicon = {}
 
     def load(self):
-        if os.path.exists("data/lexicon.json"):
-            with open("data/lexicon.json", "r", encoding="utf-8") as f:
+        if os.path.exists("lexicon.json"):
+            with open("lexicon.json", "r", encoding="utf-8") as f:
                 self.lexicon = json.load(f)
-        if os.path.exists("data/index.bin"):
-            self.index = open("data/index.bin", "rb")
+        if os.path.exists("index.bin"):
+            self.index = open("index.bin", "rb")
         if os.path.exists("doc_lengths.json"):
             with open("doc_lengths.json", "r", encoding="utf-8") as f:
                 self.doc_lengths = json.load(f)
-            self._total_doc_count = len(self.doc_lengths)
         if os.path.exists("stats.json"):
             with open("stats.json", "r", encoding="utf-8") as f:
                 stats = json.load(f)
