@@ -112,6 +112,7 @@ class Index:
                 postings = line[colon_idx + 1 :].strip()
 
                 if current_token and token != current_token:
+                    current_postings.sort(key=lambda p: int(p.split(",")[0]))
                     self._write_bin(
                         index, current_token, current_postings, self.doc_lengths
                     )
@@ -120,6 +121,7 @@ class Index:
                 current_postings.extend(postings.split(";"))
 
             if current_token:
+                current_postings.sort(key=lambda p: int(p.split(",")[0]))
                 self._write_bin(
                     index, current_token, current_postings, self.doc_lengths
                 )
