@@ -44,11 +44,11 @@ class Index:
         self.lexicon = {}
 
     def load(self):
-        if os.path.exists("data/lexicon.json"):
-            with open("data/lexicon.json", "r", encoding="utf-8") as f:
+        if os.path.exists("lexicon.json"):
+            with open("lexicon.json", "r", encoding="utf-8") as f:
                 self.lexicon = json.load(f)
-        if os.path.exists("data/index.bin"):
-            self.index = open("data/index.bin", "rb")
+        if os.path.exists("index.bin"):
+            self.index = open("index.bin", "rb")
         if os.path.exists("doc_lengths.json"):
             with open("doc_lengths.json", "r", encoding="utf-8") as f:
                 self.doc_lengths = json.load(f)
@@ -113,6 +113,7 @@ class Index:
                 postings = line[colon_idx + 1 :].strip()
 
                 if current_token and token != current_token:
+                    current_postings.sort(key=lambda p: int(p.split(",")[0]))
                     self._write_bin(
                         index, current_token, current_postings, self.doc_lengths
                     )
@@ -121,6 +122,7 @@ class Index:
                 current_postings.extend(postings.split(";"))
 
             if current_token:
+                current_postings.sort(key=lambda p: int(p.split(",")[0]))
                 self._write_bin(
                     index, current_token, current_postings, self.doc_lengths
                 )
