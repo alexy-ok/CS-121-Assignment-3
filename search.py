@@ -8,14 +8,21 @@ try:
 except LookupError:
     nltk.download("punkt_tab", quiet=True)
 
-# Initialize the stemmer
-stemmer = nltk.stem.PorterStemmer()
-
 
 def tokenize_and_stem(query: str):
+    stemmer = nltk.stem.PorterStemmer()
     tokens = nltk.tokenize.word_tokenize(query)
     return [stemmer.stem(t.lower()) for t in tokens if t.isalnum()]
 
+def search(query: str, index: Index):
+    start_time = time.perf_counter()
+    query = query.lower()
+    tokens = tokenize_and_stem(query)
+    doc_ids = index.boolean_and(tokens)
+    doc_ids = index.sort_tfidf(doc_ids, tokens)
+    end_time = time.perf_counter()
+    elapsed_ms = (end_time - start_time) * 1000
+    return doc_ids, elapsed_ms
 
 if __name__ == "__main__":
     # Load the index
@@ -26,15 +33,9 @@ if __name__ == "__main__":
 
     while True:
         query = input("Enter query: ").strip()
-        start_time = time.perf_counter()
         if query.lower() in ("exit", "quit"):
             break
-        query = query.lower()
-        tokens = tokenize_and_stem(query)
-        doc_ids = index.boolean_and(tokens)
-        doc_ids = index.sort_tfidf(doc_ids, tokens)
-        end_time = time.perf_counter()
-        elapsed_ms = (end_time - start_time) * 1000
+        doc_ids, elapsed_ms = search(query, index)
         print(f"Found {len(doc_ids)} results (processed in {elapsed_ms:.2f} ms)")
         if not doc_ids:
             print("No results found.\n")
