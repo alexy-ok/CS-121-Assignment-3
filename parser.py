@@ -8,6 +8,8 @@ import nltk
 nltk.download("punkt")
 nltk.download("punkt_tab")
 
+_stem_cache = {}
+
 
 class DocumentParser:
     def __init__(self, file_path):
@@ -16,7 +18,14 @@ class DocumentParser:
 
     def _tokenize_and_stem(self, text: str) -> list[str]:
         tokens = nltk.tokenize.word_tokenize(text)
-        return [self.stemmer.stem(token) for token in tokens if token]
+        result = []
+        for token in tokens:
+            if token:
+                lower_token = token.lower()
+                if lower_token not in _stem_cache:
+                    _stem_cache[lower_token] = self.stemmer.stem(lower_token)
+                result.append(_stem_cache[lower_token])
+        return result
 
     def parse(self):
         with open(self.file_path, "r", encoding="utf-8") as f:

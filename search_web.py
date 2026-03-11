@@ -16,7 +16,7 @@ st.title("CS 121 Assignment 3 Search Engine")
 
 query = st.text_input("Enter your query")
 
-if st.button("Search"):
+if st.button("Search") or query:
     doc_ids, elapsed_ms = search(query, index)
     st.write(f"Found {len(doc_ids)} results (processed in {elapsed_ms:.2f} ms)")
     if not doc_ids:
@@ -25,5 +25,5 @@ if st.button("Search"):
         st.write("Top results:")
         for doc_id in doc_ids[:5]:
             url = index.doc_id_to_url.get(str(doc_id[0]), "(URL not found)")
-            st.write(f"{url}")
+            st.write(f"{url} (score: {doc_id[1]:.4f})")
 
