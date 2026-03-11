@@ -65,7 +65,7 @@ class Index:
         frequency: int,
         importance: dict[Tag, int],
     ):
-        self._memory_index.setdefault(token, []).append(
+        self._memory_index.setdefault(token.lower().strip(), []).append(
             Posting(document_id, frequency, importance)
         )
 
@@ -95,39 +95,49 @@ class Index:
         self._memory_index = {}
 
     def merge_partials_bin(self):
+        # Persist doc lengths
         with open("doc_lengths.json", "w", encoding="utf-8") as f:
             json.dump(self.doc_lengths, f, indent=2)
 
         with open("index.bin", "wb") as index:
-            files = [open(path, "r", encoding="utf-8") for path in self._partial_paths]
-            merged_files = heapq.merge(*files)
+            files = []
+            iters = []
+
+            for path in self._partial_paths:
+                f = open(path, "r", encoding="utf-8")
+                files.append(f)
+
+                def make_iter(f=f):
+                    for line in f:
+                        colon_idx = line.rfind(":")
+                        token = line[:colon_idx].lower().strip()
+                        postings = line[colon_idx + 1 :].strip()
+                        if not token or not postings:
+                            continue
+                        yield (token, postings)
+
+                iters.append(make_iter())
+
+            merged = heapq.merge(*iters, key=lambda x: x[0]) # sort lines only by token
 
             current_token = None
             current_postings = []
-            for line in merged_files:
-                # Find the last colon that separates token from postings
-                # Postings always start with digits (doc_id), so find last colon before digits
-                colon_idx = line.rfind(":")
-                token = line[:colon_idx]
-                postings = line[colon_idx + 1 :].strip()
 
-                if current_token and token != current_token:
+            for token, postings_str in merged:
+                if current_token is not None and token != current_token:
                     current_postings.sort(key=lambda p: int(p.split(",")[0]))
-                    self._write_bin(
-                        index, current_token, current_postings, self.doc_lengths
-                    )
+                    self._write_bin(index, current_token, current_postings, self.doc_lengths)
                     current_postings = []
+
                 current_token = token
-                current_postings.extend(postings.split(";"))
+                current_postings.extend(postings_str.split(";"))
 
-            if current_token:
+            if current_token is not None and current_postings:
                 current_postings.sort(key=lambda p: int(p.split(",")[0]))
-                self._write_bin(
-                    index, current_token, current_postings, self.doc_lengths
-                )
+                self._write_bin(index, current_token, current_postings, self.doc_lengths)
 
-            for file in files:
-                file.close()
+            for f in files:
+                f.close()
 
             self.write_lexicon()
             self.write_stats()
@@ -146,7 +156,6 @@ class Index:
         for i in range(num_entries):
             doc_id, tfidf = struct.unpack("If", data[i * 8 : (i + 1) * 8])
             postings.append((doc_id, tfidf))
-
         return postings
 
     def boolean_and(self, tokens: list[str]):
