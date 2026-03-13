@@ -2,6 +2,25 @@ from index import Index
 from parser import DocumentParser
 import logging
 import os
+import hashlib
+import re
+
+SEEN_HASHES = set()
+duplicates_removed = 0
+
+
+def exact_duplicate(text: str):
+    # Normalize text
+    normalized = re.sub(r"\s+", " ", text.lower()).strip()
+
+    # Create a 64-bit hash
+    h = hashlib.blake2b(normalized.encode(), digest_size=8).hexdigest()
+
+    if h in SEEN_HASHES:
+        return True
+
+    SEEN_HASHES.add(h)
+    return False
 
 if __name__ == "__main__":
     logging.basicConfig(
@@ -41,7 +60,13 @@ if __name__ == "__main__":
         for file in files:
             try:
                 parser = DocumentParser(os.path.join("DEV", dir, file))
-                url, results, doc_length = parser.parse()
+                url, results, doc_length, text = parser.parse()
+
+                # skip duplicate pages
+                if exact_duplicate(text):
+                    duplicates_removed += 1
+                    continue
+
                 index.doc_id_to_url[doc_count] = url
                 index.log_document_length(doc_count, doc_length)
                 for token, data in results.items():
@@ -58,4 +83,5 @@ if __name__ == "__main__":
     index.flush_partial()
     index.merge_partials_bin()
     index.close()
+    log.info(f"Removed {duplicates_removed} duplicate pages")
     log.info("Indexing complete")

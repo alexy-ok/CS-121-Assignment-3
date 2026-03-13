@@ -74,5 +74,4 @@ class DocumentParser:
                 },
             }
 
-        return url, results, len(normal_tokens)
-
+        return url, results, len(normal_tokens), full_text
