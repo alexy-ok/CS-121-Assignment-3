@@ -17,8 +17,8 @@ st.title("CS 121 Assignment 3 Search Engine")
 query = st.text_input("Enter your query")
 
 if st.button("Search") or query:
-    doc_ids, elapsed_ms = search(query, index)
-    st.write(f"Found {len(doc_ids)} results (processed in {elapsed_ms:.2f} ms)")
+    doc_ids, elapsed_ms, cached = search(query, index)
+    st.write(f"Found {len(doc_ids)} results (processed in {elapsed_ms:.2f} ms) {"(cached)" if cached else ""}")
     if not doc_ids:
         st.write("No results found.")
     else:
