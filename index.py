@@ -204,7 +204,7 @@ class Index:
                 if doc_id in doc_ids_set:
                     doc_scores[doc_id] = doc_scores.get(doc_id, 0) + tfidf
 
-        result_with_scores = [(doc_id, doc_scores.get(doc_id, 0)) for doc_id in doc_ids]
+        result_with_scores = [(doc_id, doc_scores.get(doc_id, 0)) for doc_id in doc_ids_set]
         result_with_scores.sort(key=lambda x: x[1], reverse=True)
 
         return result_with_scores
